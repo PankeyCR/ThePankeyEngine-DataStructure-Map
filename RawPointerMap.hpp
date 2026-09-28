@@ -64,7 +64,11 @@ namespace pankey{
 
 					void addMove(RawPointerMap<Policy>& a_map){
 						RawPointerMapLog(pankey_Log_StartMethod, "addMove", "");
-						for(int x = 0; x < a_map.length(); x++){
+						if(this->length() > this->getSize() || a_map.length() > this->getSize() - this->length()){
+							RawPointerMapLog(pankey_Log_EndMethod, "addMove", "insufficient destination capacity");
+							return;
+						}
+						for(Size_Type x = 0; x < a_map.length(); x++){
 							Key_Type* k = a_map.getKeyPointerByIndex(x);
 							Value_Type* v = a_map.getValuePointerByIndex(x);
 							this->addPointers(k,v);
@@ -77,12 +81,10 @@ namespace pankey{
 
 					void addDuplicate(const RawPointerMap<Policy>& a_map){
 						RawPointerMapLog(pankey_Log_StartMethod, "addDuplicate", "");
-						for(int x = 0; x < a_map.length(); x++){
+						for(Size_Type x = 0; x < a_map.length(); x++){
 							Key_Type* k = a_map.getKeyPointerByIndex(x);
 							Value_Type* v = a_map.getValuePointerByIndex(x);
 							this->addPointers(k,v);
-							a_map.releaseKeyPointer(k);
-							a_map.releaseValuePointer(v);
 						}
 						RawPointerMapLog(pankey_Log_EndMethod, "addDuplicate", "");
 					}
@@ -102,8 +104,8 @@ namespace pankey{
 
 					bool setPointers(Key_Type* a_key, Value_Type* a_value){
 						RawPointerMapLog(pankey_Log_StartMethod, "setPointers", "");
-						int i_index = this->getKeyIndexByPointer(a_key);
-						if(i_index == -1){
+						Size_Type i_index = this->getKeyIndexByPointer(a_key);
+						if(i_index == static_cast<Size_Type>(-1)){
 							RawPointerMapLog(pankey_Log_EndMethod, "setPointers", "");
 							return false;
 						}
@@ -195,12 +197,16 @@ namespace pankey{
 							RawPointerMapLog(pankey_Log_EndMethod, "removePointersByKeyPointer", "");
 							return false;
 						}
-						Size_Type i_index = 0;
+						Size_Type i_index = -1;
 						for(Size_Type x = 0; x < this->length(); x++){
 							if(a_key == this->getFastKeyPointerByIndex(x)){
 								i_index = x;
 								break;
 							}
+						}
+						if(i_index == static_cast<Size_Type>(-1)){
+							RawPointerMapLog(pankey_Log_EndMethod, "removePointersByKeyPointer", "");
+							return false;
 						}
 						RawPointerMapLog(pankey_Log_EndMethod, "removePointersByKeyPointer", "");
 						return this->removePointersByIndex(i_index);
@@ -212,12 +218,16 @@ namespace pankey{
 							RawPointerMapLog(pankey_Log_EndMethod, "removePointersByValuePointer", "");
 							return false;
 						}
-						Size_Type i_index = 0;
+						Size_Type i_index = -1;
 						for(Size_Type x = 0; x < this->length(); x++){
 							if(a_value == this->getFastValuePointerByIndex(x)){
 								i_index = x;
 								break;
 							}
+						}
+						if(i_index == static_cast<Size_Type>(-1)){
+							RawPointerMapLog(pankey_Log_EndMethod, "removePointersByValuePointer", "");
+							return false;
 						}
 						RawPointerMapLog(pankey_Log_EndMethod, "removePointersByValuePointer", "");
 						return this->removePointersByIndex(i_index);
@@ -252,6 +262,10 @@ namespace pankey{
 
 					bool destroyByIndex(Size_Type a_index){
 						RawPointerMapLog(pankey_Log_StartMethod, "destroyByIndex", "");
+						if(a_index >= this->length() || this->isEmpty() || a_index < 0){
+							RawPointerMapLog(pankey_Log_EndMethod, "destroyByIndex", "");
+							return false;
+						}
 						Key_Type* i_key = this->getFastKeyPointerByIndex(a_index);
 						Value_Type* i_value = this->getFastValuePointerByIndex(a_index);
 						if(this->removePointersByIndex(a_index)){
@@ -305,9 +319,8 @@ namespace pankey{
 					}
 					void decrementIndex(){
 						RawPointerMapLog(pankey_Log_StartMethod, "decrementIndex", static_cast<Size_Type>(this->m_index));
-						this->m_index--;
-						if(this->m_index < 0){
-							this->m_index = 0;
+						if(this->m_index > 0){
+							this->m_index--;
 						}
 						RawPointerMapLog(pankey_Log_EndMethod, "decrementIndex", static_cast<Size_Type>(this->m_index));
 					}
@@ -319,9 +332,13 @@ namespace pankey{
 					}
 					void decrementIndex(int a_size){
 						RawPointerMapLog(pankey_Log_StartMethod, "decrementIndex", static_cast<Size_Type>(this->m_index));
-						this->m_index -= a_size;
-						if(this->m_index < 0){
+						if(a_size <= 0){
+							return;
+						}
+						if(static_cast<Size_Type>(a_size) >= this->m_index){
 							this->m_index = 0;
+						}else{
+							this->m_index -= static_cast<Size_Type>(a_size);
 						}
 						RawPointerMapLog(pankey_Log_EndMethod, "decrementIndex", static_cast<Size_Type>(this->m_index));
 					}
