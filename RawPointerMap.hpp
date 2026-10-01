@@ -62,44 +62,37 @@ namespace pankey{
 						return a_index >= 0 && a_index < this->length() && this->hasAvailableSize();
 					}
 
-					void addMove(RawPointerMap<Policy>& a_map){
-						RawPointerMapLog(pankey_Log_StartMethod, "addMove", "");
-						if(this->length() > this->getSize() || a_map.length() > this->getSize() - this->length()){
-							RawPointerMapLog(pankey_Log_EndMethod, "addMove", "insufficient destination capacity");
-							return;
+					bool addPointers(Key_Type* a_key, Value_Type* a_value){
+						RawPointerMapLog(pankey_Log_StartMethod, "addPointers", "");
+						if(!this->hasAvailableSize() || a_key == nullptr){
+							RawPointerMapLog(pankey_Log_Statement, "addPointers", "!this->hasAvailableSize() || a_key == nullptr");
+							return false;
 						}
-						for(Size_Type x = 0; x < a_map.length(); x++){
-							Key_Type* k = a_map.getKeyPointerByIndex(x);
-							Value_Type* v = a_map.getValuePointerByIndex(x);
-							this->addPointers(k,v);
-							a_map.releaseKeyPointer(k);
-							a_map.releaseValuePointer(v);
-						}
-						a_map.m_index = 0;
-						RawPointerMapLog(pankey_Log_EndMethod, "addMove", "");
+						
+						this->addFastPointers(a_key, a_value);
+
+						RawPointerMapLog(pankey_Log_EndMethod, "addPointers", "");
+						return true;
 					}
 
-					void addDuplicate(const RawPointerMap<Policy>& a_map){
-						RawPointerMapLog(pankey_Log_StartMethod, "addDuplicate", "");
-						for(Size_Type x = 0; x < a_map.length(); x++){
-							Key_Type* k = a_map.getKeyPointerByIndex(x);
-							Value_Type* v = a_map.getValuePointerByIndex(x);
-							this->addPointers(k,v);
-						}
-						RawPointerMapLog(pankey_Log_EndMethod, "addDuplicate", "");
-					}
-
-					virtual bool addPointers(Key_Type* a_key, Value_Type* a_value)=0;
 					virtual bool addFastPointers(Key_Type* a_key, Value_Type* a_value)=0;
 
 					bool putPointers(Key_Type* a_key, Value_Type* a_value){
 						RawPointerMapLog(pankey_Log_StartMethod, "putPointers", "");
-						if(this->containPairPointers(a_key,a_value)){
-							RawPointerMapLog(pankey_Log_EndMethod, "putPointers", "");
-							return true;
+						if(!this->hasAvailableSize() || a_key == nullptr){
+							RawPointerMapLog(pankey_Log_Statement, "putPointers", "!this->hasAvailableSize() || a_key == nullptr)");
+							return false;
+						}
+
+						for(Size_Type x = 0; x < this->length(); x++){
+							Key_Type* i_key = this->getFastKeyPointerByIndex(x);
+							if(i_key == a_key){
+								RawPointerMapLog(pankey_Log_EndMethod, "putPointers", "");
+								return this->setValuePointerByIndex(x, a_value);
+							}
 						}
 						RawPointerMapLog(pankey_Log_EndMethod, "putPointers", "");
-						return this->addPointers(a_key, a_value);
+						return this->addFastPointers(a_key, a_value);
 					}
 
 					bool setPointers(Key_Type* a_key, Value_Type* a_value){
@@ -168,7 +161,16 @@ namespace pankey{
 						return nullptr;
 					}
 
-					virtual Key_Type* getKeyPointerByIndex(Size_Type a_index)const=0;
+					Key_Type* getKeyPointerByIndex(Size_Type a_index)const{
+						RawPointerMapLog(pankey_Log_StartMethod, "getKeyPointerByIndex", "");
+						if(a_index < 0 || a_index >= this->length() || this->isEmpty()){
+							RawPointerMapLog(pankey_Log_EndMethod, "getKeyPointerByIndex", "");
+							return nullptr;
+						}
+						RawPointerMapLog(pankey_Log_EndMethod, "getKeyPointerByIndex", "");
+						return this->getFastKeyPointerByIndex(a_index);
+					}
+
 					virtual Key_Type* getFastKeyPointerByIndex(Size_Type a_index)const=0;
 
 					Value_Type* getValuePointerByPointer(const Key_Type* a_key)const{
@@ -183,9 +185,17 @@ namespace pankey{
 						return nullptr;
 					}
 
-					virtual Value_Type* getValuePointerByIndex(Size_Type a_index)const=0;
-					virtual Value_Type* getFastValuePointerByIndex(Size_Type a_index)const=0;
+					Value_Type* getValuePointerByIndex(Size_Type a_index)const{
+						RawPointerMapLog(pankey_Log_StartMethod, "getValuePointerByIndex", "");
+						if(a_index < 0 || a_index >= this->length() || this->isEmpty()){
+							RawPointerMapLog(pankey_Log_EndMethod, "getValuePointerByIndex", "");
+							return nullptr;
+						}
+						RawPointerMapLog(pankey_Log_EndMethod, "getValuePointerByIndex", "");
+						return this->getFastValuePointerByIndex(a_index);
+					}
 					
+					virtual Value_Type* getFastValuePointerByIndex(Size_Type a_index)const=0;
 
 					virtual void reset()=0;
 					virtual void clear()=0;
@@ -278,7 +288,7 @@ namespace pankey{
 						return false;
 					}
 
-					Size_Type getKeyIndexByPointer(Key_Type* a_key){
+					Size_Type getKeyIndexByPointer(Key_Type* a_key)const{
 						RawPointerMapLog(pankey_Log_StartMethod, "getKeyIndexByPointer", "");
 						if(this->isEmpty()){
 							RawPointerMapLog(pankey_Log_EndMethod, "getKeyIndexByPointer", "");
@@ -294,7 +304,7 @@ namespace pankey{
 						return static_cast<Size_Type>(-1);
 					}
 
-					Size_Type getValueIndexByPointer(Value_Type* a_value){
+					Size_Type getValueIndexByPointer(Value_Type* a_value)const{
 						RawPointerMapLog(pankey_Log_StartMethod, "getValueIndexByPointer", "");
 						if(this->isEmpty()){
 							RawPointerMapLog(pankey_Log_EndMethod, "getValueIndexByPointer", "");
@@ -375,6 +385,9 @@ namespace pankey{
 					
 					virtual void releaseKeyPointer(Key_Type* a_pointer){}
 					virtual void releaseValuePointer(Value_Type* a_pointer){}
+					
+					virtual Key_Type* createKeyPointer(){return nullptr;}
+					virtual Value_Type* createValuePointer(){return nullptr;}
 					
 					virtual void destroyKeyPointer(Key_Type* a_pointer){}
 					virtual void destroyValuePointer(Value_Type* a_pointer){}

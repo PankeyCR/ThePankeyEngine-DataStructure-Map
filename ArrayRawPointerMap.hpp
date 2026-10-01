@@ -26,44 +26,9 @@ namespace pankey{
 						ArrayRawPointerMapLog(pankey_Log_EndMethod, "Constructor", "");
 					}
 
-					ArrayRawPointerMap(const ArrayRawPointerMap<Policy>& c_map){
-						ArrayRawPointerMapLog(pankey_Log_StartMethod, "Copy Constructor", "");
+					ArrayRawPointerMap(const ArrayRawPointerMap<Policy>& c_map) = delete;
 
-						if(c_map.getSize() > 0){
-							this->expandLocalSize(c_map.getSize());
-						}
-
-						for(int x = 0; x < c_map.length(); x++){
-							this->addFastPointers(c_map.m_keys[x], c_map.m_values[x]);
-						}
-
-						this->m_index = c_map.m_index;
-						this->m_size = c_map.m_size;
-						
-						this->m_expandSize = c_map.m_expandSize;
-
-						ArrayRawPointerMapLog(pankey_Log_EndMethod, "Copy Constructor", "");
-					}
-
-					ArrayRawPointerMap(ArrayRawPointerMap<Policy>&& a_map){
-						ArrayRawPointerMapLog(pankey_Log_StartMethod, "Constructor", "");
-
-						this->m_index = a_map.m_index;
-						this->m_size = a_map.m_size;
-						
-						this->m_expandSize = a_map.m_expandSize;
-
-						this->m_keys = a_map.m_keys;
-						this->m_values = a_map.m_values;
-
-						a_map.m_index = 0;
-						a_map.m_size = 0;
-
-						a_map.m_keys = nullptr;
-						a_map.m_values = nullptr;
-						
-						ArrayRawPointerMapLog(pankey_Log_EndMethod, "Constructor", "");
-					}
+					ArrayRawPointerMap(ArrayRawPointerMap<Policy>&& a_map) = delete;
 
 					virtual ~ArrayRawPointerMap(){
 						ArrayRawPointerMapLog(pankey_Log_StartMethod, "Destructor", "");
@@ -94,23 +59,6 @@ namespace pankey{
 						ArrayRawPointerMapLog(pankey_Log_StartMethod, "isEmpty", "");
 						ArrayRawPointerMapLog(pankey_Log_EndMethod, "isEmpty", "");
 						return this->length() <= 0 || this->m_keys == nullptr || this->m_values == nullptr;
-					}
-
-					virtual bool addPointers(Key_Type* a_key, Value_Type* a_value){
-						ArrayRawPointerMapLog(pankey_Log_StartMethod, "addPointers", "");
-						if(this->length() >= this->getSize()){
-							ArrayRawPointerMapLog(pankey_Log_Statement, "addPointers", "this->length() >= this->getSize()");
-							return false;
-						}
-						this->m_keys[this->length()] = a_key;
-						this->m_values[this->length()] = a_value;
-						this->incrementIndex();
-
-						this->attachKeyPointer(a_key);
-						this->attachValuePointer(a_value);
-
-						ArrayRawPointerMapLog(pankey_Log_EndMethod, "addPointers", "");
-						return true;
 					}
 
 					virtual bool addFastPointers(Key_Type* a_key, Value_Type* a_value){
@@ -167,36 +115,16 @@ namespace pankey{
 						return true;
 					}
 
-					virtual Value_Type* getValuePointerByIndex(int a_index) const{
-						ArrayRawPointerMapLog(pankey_Log_StartMethod, "getValuePointerByIndex", "");
-						if(a_index < 0 || a_index >= this->length() || this->isEmpty()){
-							ArrayRawPointerMapLog(pankey_Log_EndMethod, "getValuePointerByIndex", "");
-							return nullptr;
-						}
-						ArrayRawPointerMapLog(pankey_Log_EndMethod, "getValuePointerByIndex", "");
-						return this->m_values[a_index];
+					virtual Key_Type* getFastKeyPointerByIndex(int a_index) const{
+						ArrayRawPointerMapLog(pankey_Log_StartMethod, "getFastKeyPointerByIndex", "");
+						ArrayRawPointerMapLog(pankey_Log_EndMethod, "getFastKeyPointerByIndex", "");
+						return this->m_keys[a_index];
 					}
 
 					virtual Value_Type* getFastValuePointerByIndex(int a_index) const{
 						ArrayRawPointerMapLog(pankey_Log_StartMethod, "getFastValuePointerByIndex", "");
 						ArrayRawPointerMapLog(pankey_Log_EndMethod, "getFastValuePointerByIndex", "");
 						return this->m_values[a_index];
-					}
-
-					virtual Key_Type* getKeyPointerByIndex(int a_index) const{
-						ArrayRawPointerMapLog(pankey_Log_StartMethod, "getKeyPointerByIndex", "");
-						if(a_index < 0 || a_index >= this->length() || this->isEmpty()){
-							ArrayRawPointerMapLog(pankey_Log_EndMethod, "getKeyPointerByIndex", "");
-							return nullptr;
-						}
-						ArrayRawPointerMapLog(pankey_Log_EndMethod, "getKeyPointerByIndex", "");
-						return this->m_keys[a_index];
-					}
-
-					virtual Key_Type* getFastKeyPointerByIndex(int a_index) const{
-						ArrayRawPointerMapLog(pankey_Log_StartMethod, "getFastKeyPointerByIndex", "");
-						ArrayRawPointerMapLog(pankey_Log_EndMethod, "getFastKeyPointerByIndex", "");
-						return this->m_keys[a_index];
 					}
 
 					virtual void reset(){
@@ -350,6 +278,17 @@ namespace pankey{
 					virtual bool expandLocalSize(int a_size){
 						ArrayRawPointerMapLog(pankey_Log_StartMethod, "expandLocalSize", "");
 
+						ArrayRawPointerMapLog(pankey_Log_Statement, "expandLocalSize", "Input size: ");
+						ArrayRawPointerMapLog(pankey_Log_Statement, "expandLocalSize", a_size);
+
+						if(a_size <= 0){
+							ArrayRawPointerMapLog(pankey_Log_EndMethod, "expandLocalSize", "a_size <= 0");
+							return false;
+						}
+
+						ArrayRawPointerMapLog(pankey_Log_Statement, "expandLocalSize", "Local size: ");
+						ArrayRawPointerMapLog(pankey_Log_Statement, "expandLocalSize", this->getSize());
+
 						int i_size = this->getSize() + a_size;
 
 						ArrayRawPointerMapLog(pankey_Log_Statement, "expandLocalSize", "Expanding size: ");
@@ -381,46 +320,9 @@ namespace pankey{
 						return true;
 					}
 
-					virtual ArrayRawPointerMap<Policy>& operator=(const ArrayRawPointerMap<Policy>& a_map){
-						ArrayRawPointerMapLog(pankey_Log_StartMethod, "operator=", "const ArrayRawPointerMap<K,V>&");
-						if(this == &a_map){
-							return *this;
-						}
-						this->clear();
-						for(int x = 0; x < a_map.length(); x++){
-							Key_Type* f_key = a_map.getKeyPointerByIndex(x);
-							Value_Type* f_value = a_map.getValuePointerByIndex(x);
-							this->addPointers(f_key, f_value);
-						}
-						ArrayRawPointerMapLog(pankey_Log_EndMethod, "operator=", "");
-						return *this;
-					}
+					ArrayRawPointerMap<Policy>& operator=(const ArrayRawPointerMap<Policy>& a_map) = delete;
 
-					virtual ArrayRawPointerMap<Policy>& operator=(ArrayRawPointerMap<Policy>&& a_map){
-						ArrayRawPointerMapLog(pankey_Log_StartMethod, "operator=", "ArrayRawPointerMap<K,V>&&");
-						if(this == &a_map){
-							return *this;
-						}
-						this->clear();
-						this->destroyKeyPointerArray(this->m_keys);
-						this->destroyValuePointerArray(this->m_values);
-
-						this->m_index = a_map.m_index;
-						this->m_size = a_map.m_size;
-						
-						this->m_expandSize = a_map.m_expandSize;
-
-						this->m_keys = a_map.m_keys;
-						this->m_values = a_map.m_values;
-						
-						a_map.m_keys = nullptr;
-						a_map.m_values = nullptr;
-						a_map.m_index = 0;
-						a_map.m_size = 0;
-						
-						ArrayRawPointerMapLog(pankey_Log_EndMethod, "operator=", "ArrayRawPointerMap<K,V>&&");
-						return *this;
-					}
+					ArrayRawPointerMap<Policy>& operator=(ArrayRawPointerMap<Policy>&& a_map) = delete;
 
 					virtual bool operator==(const ArrayRawPointerMap<Policy>& a_map){
 						ArrayRawPointerMapLog(pankey_Log_StartMethod, "operator==", "const ArrayRawPointerMap<K,V>&");
@@ -465,8 +367,6 @@ namespace pankey{
 					
 					virtual void destroyKeyPointerArray(Key_Type** a_pointer){}
 					virtual void destroyValuePointerArray(Value_Type** a_pointer){}
-
-					int m_expandSize = 5;
 
 					Key_Type** m_keys = nullptr;
 					Value_Type** m_values = nullptr;
