@@ -32,26 +32,6 @@ namespace pankey{
 
 					virtual ~ArrayRawPointerMap(){
 						ArrayRawPointerMapLog(pankey_Log_StartMethod, "Destructor", "");
-						if(this->m_keys != nullptr && this->m_values != nullptr){
-							ArrayRawPointerMapLog(pankey_Log_Statement, "Destructor", "this->m_keys != nullptr && this->m_values != nullptr");
-							for(int x = 0; x < this->length(); x++){
-								Key_Type* f_key = this->m_keys[x];
-								Value_Type* f_value = this->m_values[x];
-
-								this->releaseKeyPointer(f_key);
-								this->releaseValuePointer(f_value);
-
-								this->destroyKeyPointer(f_key);
-								this->destroyValuePointer(f_value);
-							}
-							ArrayRawPointerMapLog(pankey_Log_StartMethod, "Destructor", "after deleting");
-							this->m_index = 0;
-							this->m_size = 0;
-							this->destroyKeyPointerArray(this->m_keys);
-							this->destroyValuePointerArray(this->m_values);
-							this->m_keys = nullptr;
-							this->m_values = nullptr;
-						}
 						ArrayRawPointerMapLog(pankey_Log_EndMethod, "Destructor", "");
 					}
 
@@ -191,7 +171,7 @@ namespace pankey{
 						return true;
 					}
 
-					virtual bool shrinkLocalSize(int a_size){
+					bool shrinkLocalSize(int a_size){
 						ArrayRawPointerMapLog(pankey_Log_StartMethod, "shrinkLocalSize", "");
 
 						if(a_size <= 0){
@@ -242,7 +222,7 @@ namespace pankey{
 						return true;
 					}
 
-					virtual bool shrinkLocal(int a_size){
+					bool shrinkLocal(int a_size){
 						ArrayRawPointerMapLog(pankey_Log_StartMethod, "shrinkLocal", "");
 
 						if(a_size <= 0){
@@ -275,7 +255,7 @@ namespace pankey{
 					}
 
 					//resize length by adding more space
-					virtual bool expandLocalSize(int a_size){
+					bool expandLocalSize(int a_size){
 						ArrayRawPointerMapLog(pankey_Log_StartMethod, "expandLocalSize", "");
 
 						ArrayRawPointerMapLog(pankey_Log_Statement, "expandLocalSize", "Input size: ");
@@ -303,13 +283,20 @@ namespace pankey{
 						Value_Type** nV = this->createValuePointerArray(i_size);
 						
 						for(int x=0; x < this->length(); x++){
+							ArrayRawPointerMapLog(pankey_Log_Statement, "expandLocalSize", "Re-assinging values");
+							ArrayRawPointerMapLog(pankey_Log_Statement, "expandLocalSize", "iteration: ");
+							ArrayRawPointerMapLog(pankey_Log_Statement, "expandLocalSize", x);
 							nK[x] = this->m_keys[x];
 							nV[x] = this->m_values[x];
 						}
 						for(int x = this->length(); x < i_size; x++){
+							ArrayRawPointerMapLog(pankey_Log_Statement, "expandLocalSize", "Nulling values");
+							ArrayRawPointerMapLog(pankey_Log_Statement, "expandLocalSize", "iteration: ");
+							ArrayRawPointerMapLog(pankey_Log_Statement, "expandLocalSize", x);
 							nK[x] = nullptr;
 							nV[x] = nullptr;
 						}
+
 						this->destroyKeyPointerArray(this->m_keys);
 						this->destroyValuePointerArray(this->m_values);
 
@@ -318,6 +305,31 @@ namespace pankey{
 						this->m_size = i_size;
 						ArrayRawPointerMapLog(pankey_Log_EndMethod, "expandLocalSize", "");
 						return true;
+					}
+
+					void destroyLocal(){
+						ArrayRawPointerMapLog(pankey_Log_StartMethod, "destroyLocal", "");
+						if(this->m_keys != nullptr && this->m_values != nullptr){
+							ArrayRawPointerMapLog(pankey_Log_Statement, "destroyLocal", "this->m_keys != nullptr && this->m_values != nullptr");
+							for(int x = 0; x < this->length(); x++){
+								Key_Type* f_key = this->m_keys[x];
+								Value_Type* f_value = this->m_values[x];
+
+								this->releaseKeyPointer(f_key);
+								this->releaseValuePointer(f_value);
+
+								this->destroyKeyPointer(f_key);
+								this->destroyValuePointer(f_value);
+							}
+							ArrayRawPointerMapLog(pankey_Log_StartMethod, "destroyLocal", "after deleting");
+							this->m_index = 0;
+							this->m_size = 0;
+							this->destroyKeyPointerArray(this->m_keys);
+							this->destroyValuePointerArray(this->m_values);
+							this->m_keys = nullptr;
+							this->m_values = nullptr;
+						}
+						ArrayRawPointerMapLog(pankey_Log_EndMethod, "destroyLocal", "");
 					}
 
 					ArrayRawPointerMap<Policy>& operator=(const ArrayRawPointerMap<Policy>& a_map) = delete;
